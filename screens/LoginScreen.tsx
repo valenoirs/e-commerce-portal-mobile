@@ -10,6 +10,8 @@ import {
 } from "react-native";
 import { globalStyle } from "../styles/style";
 
+import config from "../config/config";
+
 const LoginScreen = ({ navigation }: any) => {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
@@ -20,7 +22,7 @@ const LoginScreen = ({ navigation }: any) => {
     }
 
     axios
-      .post("http://192.168.43.219:5000/api/user/signin", {
+      .post(`${config.api_host}/api/user/signin`, {
         email,
         password,
       })
@@ -31,7 +33,7 @@ const LoginScreen = ({ navigation }: any) => {
         } catch (error) {
           return;
         }
-        navigation.navigate("Product");
+        navigation.navigate("LoggedInTab");
       })
       .catch((error) => {
         alert(error.response.data.message);

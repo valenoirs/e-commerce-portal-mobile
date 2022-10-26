@@ -9,6 +9,8 @@ import {
 } from "react-native";
 import { globalStyle } from "../styles/style";
 
+import config from "../config/config";
+
 const RegisterScreen = ({ navigation }: any) => {
   const [name, setName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
@@ -22,7 +24,7 @@ const RegisterScreen = ({ navigation }: any) => {
     }
 
     axios
-      .post("http://192.168.43.219:5000/api/user/signup", {
+      .post(`${config.api_host}/api/user/signup`, {
         name,
         email,
         phone,
@@ -42,18 +44,23 @@ const RegisterScreen = ({ navigation }: any) => {
 
   return (
     <View style={styles.mainContainer}>
-      <Text>Register Screen</Text>
+      <Text style={{ color: "green", fontSize: 30, fontWeight: "400" }}>
+        Daftar
+      </Text>
       <TextInput
+        style={styles.textInput}
         placeholder="Name"
         onChangeText={(text) => setName(text)}
         value={name}
       />
       <TextInput
+        style={styles.textInput}
         placeholder="Email"
         onChangeText={(text) => setEmail(text)}
         value={email}
       />
       <TextInput
+        style={styles.textInput}
         placeholder="Phone"
         onChangeText={(text) => setPhone(text)}
         value={phone}
@@ -61,19 +68,21 @@ const RegisterScreen = ({ navigation }: any) => {
         keyboardType="number-pad"
       />
       <TextInput
+        style={styles.textInput}
         placeholder="Password"
         secureTextEntry={true}
         onChangeText={(text) => setPassword(text)}
         value={password}
       />
       <TextInput
+        style={styles.textInput}
         placeholder="Confirm"
         secureTextEntry={true}
         onChangeText={(text) => setPasswordConfirmation(text)}
         value={passwordConfirmation}
       />
       <TouchableOpacity style={globalStyle.button} onPress={handleLogin}>
-        <Text>Daftar</Text>
+        <Text style={{ color: "#FFFFFF" }}>Daftar</Text>
       </TouchableOpacity>
       <Text>
         Sudah punya akun?{" "}
@@ -96,5 +105,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#fff",
+  },
+  textInput: {
+    // borderWidth: 1,
+    marginVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#cccccc",
+    borderRadius: 3,
+    width: "70%",
+    marginRight: 8,
+    padding: 8,
   },
 });
