@@ -1,5 +1,5 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useState, useEffect, useCallback } from "react";
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { useState, useEffect, useCallback, useContext } from 'react'
 import {
   StyleSheet,
   View,
@@ -11,104 +11,130 @@ import {
   TouchableOpacity,
   Pressable,
   Linking,
-} from "react-native";
-import DropDownPicker from "react-native-dropdown-picker";
+} from 'react-native'
+import DropDownPicker from 'react-native-dropdown-picker'
 
-import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
 
-import config from "../config/config";
-import axios from "axios";
+import config from '../config/config'
+import axios from 'axios'
+
+import CartContext from '../context/CartContext'
+import AdminContext from '../context/AdminContext'
 
 const CartScreen = ({ navigation }: any) => {
-  const [cartProductList, setCartProductList] = useState<Array<any>>([]);
-  const [admin, setAdmin] = useState<any>();
-  const [user, setUser] = useState<any>();
-  const [payment, setPayment] = useState<boolean>(false);
+  const [cartProductList, setCartProductList] = useState<Array<any>>([])
+  // const [admin, setAdmin] = useState<any>()
+  const [user, setUser] = useState<any>()
+  const [payment, setPayment] = useState<boolean>(false)
   const [paymentList, setPaymentList] = useState<Array<any>>([
-    { label: "Dana", value: false },
-    { label: "COD", value: true },
-  ]);
-  const [paymentOpen, setPaymentOpen] = useState<boolean>(false);
-  const [totalPayment, setTotalPayment] = useState<number>(0);
+    { label: 'Dana', value: false },
+    { label: 'COD', value: true },
+  ])
+  const [paymentOpen, setPaymentOpen] = useState<boolean>(false)
+  const [totalPayment, setTotalPayment] = useState<number>(0)
+
+  const { cart, setCart } = useContext(CartContext)
+  const { admin, setAdmin } = useContext(AdminContext)
 
   useEffect(() => {
-    AsyncStorage.getItem("cart")
-      .then((value: any) => {
-        setCartProductList(JSON.parse(value));
-      })
-      .then((res) => {
-        if (cartProductList.length > 0) {
-          const total = cartProductList
-            .map((product) => product.productTotal)
-            .reduce((prev, next) => prev + next);
+    // AsyncStorage.getItem('cart')
+    //   .then((value: any) => {
+    //     setCartProductList(JSON.parse(value))
+    //   })
+    //   .then((res) => {
+    //     if (cart.length > 0) {
+    //       const total = cart
+    //         .map((product: any) => product.productTotal)
+    //         .reduce((prev: any, next: any) => prev + next)
 
-          setTotalPayment(total);
-        }
-      });
+    //       setTotalPayment(total)
+    //     }
+    //   })
 
-    AsyncStorage.getItem("admin").then((value: any) => {
-      setAdmin(JSON.parse(value));
-    });
+    if (cart.length > 0) {
+      const total = cart
+        .map((product: any) => product.productTotal)
+        .reduce((prev: any, next: any) => prev + next)
 
-    AsyncStorage.getItem("user").then((value: any) => {
-      setUser(JSON.parse(value));
-    });
+      setTotalPayment(total)
+    }
 
-    console.log("CART USE EFFECT");
-  }, []);
+    // AsyncStorage.getItem('admin').then((value: any) => {
+    //   setAdmin(JSON.parse(value))
+    // })
+
+    AsyncStorage.getItem('user').then((value: any) => {
+      setUser(JSON.parse(value))
+    })
+
+    console.log('CART USE EFFECT')
+  }, [cart])
 
   const minusButtonHandler = async (content: any) => {
-    const initialProduct = content;
-    const initialCart = cartProductList;
+    const initialProduct = content
+    // const initialCart = cartProductList
 
-    const newCart = await initialCart.filter(
-      (cart) => cart.productId !== initialProduct.productId
-    );
+    const newCart = await cart.filter(
+      (item: any) => item.productId !== initialProduct.productId
+    )
 
     if (initialProduct.quantity > 1) {
-      initialProduct.quantity -= 1;
-      initialProduct.productTotal -= content.price;
-      newCart.push(initialProduct);
+      initialProduct.quantity -= 1
+      initialProduct.productTotal -= content.price
+      newCart.push(initialProduct)
     }
 
-    setCartProductList(newCart);
+    setCart(newCart)
 
-    if (cartProductList.length > 0) {
-      const total = cartProductList
-        .map((product) => product.productTotal)
-        .reduce((prev, next) => prev + next);
+    // setCartProductList(newCart)
 
-      setTotalPayment(total);
-    }
-  };
+    // if (cart.length > 0) {
+    //   const total = cart
+    //     .map((product: any) => product.productTotal)
+    //     .reduce((prev: any, next: any) => prev + next)
+
+    //   setTotalPayment(total)
+    // }
+  }
 
   const plusButtonHandler = async (content: any) => {
-    const initialProduct = content;
-    const initialCart = cartProductList;
+    // const initialProduct = content
+    // const initialCart = cart
 
-    initialProduct.quantity += 1;
-    initialProduct.productTotal += content.price;
+    // initialProduct.quantity += 1
+    // initialProduct.productTotal += content.price
 
-    const newCart = await initialCart.filter(
-      (cart) => cart.productId !== initialProduct.productId
-    );
+    // const newCart = await initialCart.filter(
+    //   (cart: any) => cart.productId !== initialProduct.productId
+    // )
 
-    newCart.push(initialProduct);
+    const newCart = cart.map((item: any) =>
+      item.productId === content.productId
+        ? {
+            ...item,
+            quantity: item.quantity + 1,
+            productTotal: item.productTotal + item.price,
+          }
+        : item
+    )
 
-    setCartProductList(newCart);
+    setCart(newCart)
 
-    if (cartProductList.length > 0) {
-      const total = cartProductList
-        .map((product) => product.productTotal)
-        .reduce((prev, next) => prev + next);
+    // setCartProductList(newCart)
 
-      setTotalPayment(total);
-    }
-  };
+    // if (cart.length > 0) {
+    //   const total = cart
+    //     .map((product: any) => product.productTotal)
+    //     .reduce((prev: any, next: any) => prev + next)
+
+    //   setTotalPayment(total)
+    // }
+  }
 
   const paymentHandler = () => {
-    console.log(payment);
-  };
+    console.log(payment)
+  }
 
   const checkoutHandler = () => {
     const payload = {
@@ -118,24 +144,30 @@ const CartScreen = ({ navigation }: any) => {
       adminId: admin.adminId,
       adminName: admin.adminName,
       adminPhone: admin.phone,
-      product: cartProductList,
+      product: cart,
       totalPayment,
       isCOD: payment,
-    };
+    }
 
     axios
       .post(`${config.api_host}/api/order`, payload)
       .then((response) => {
-        alert(response.data.message);
+        if (response.status === 200) {
+          AsyncStorage.setItem('cart', JSON.stringify([]))
+          AsyncStorage.setItem('admin', JSON.stringify([]))
+          setCart([])
+          setAdmin({})
+        }
+        alert(response.data.message)
       })
       .catch((error) => {
-        alert(error);
-      });
-  };
+        alert(error)
+      })
+  }
 
   return (
     <View style={styles.mainContainer}>
-      {cartProductList?.length > 0 ? (
+      {cart?.length !== 0 ? (
         <>
           {/* Admin Panel */}
           <View style={styles.adminContainer}>
@@ -145,8 +177,8 @@ const CartScreen = ({ navigation }: any) => {
                   style={styles.adminTitle}
                   onPress={() => {
                     Linking.openURL(
-                      "whatsapp://send?phone=62" + admin.phone.slice(1)
-                    );
+                      'whatsapp://send?phone=62' + admin.phone.slice(1)
+                    )
                   }}
                 >
                   <MaterialCommunityIcons name="store" size={22} />
@@ -163,7 +195,7 @@ const CartScreen = ({ navigation }: any) => {
                   <MaterialCommunityIcons
                     name="star"
                     size={15}
-                    style={{ color: "gold" }}
+                    style={{ color: 'gold' }}
                   />
                   <Text> </Text>
                   {admin.rating}
@@ -197,7 +229,7 @@ const CartScreen = ({ navigation }: any) => {
           {/* Product List */}
           <View style={{ zIndex: -1, ...styles.productContainer }}>
             <FlatList
-              data={cartProductList}
+              data={cart}
               renderItem={(itemData) => {
                 return (
                   <Pressable>
@@ -222,10 +254,10 @@ const CartScreen = ({ navigation }: any) => {
                         <Text style={styles.productContentPrice}>
                           <MaterialCommunityIcons name="cash" size={16} />
                           <Text> </Text>
-                          Rp.{" "}
+                          Rp.{' '}
                           {itemData.item.price
                             .toString()
-                            .replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                            .replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                         </Text>
                         <Text style={styles.productContentPrice}>
                           <MaterialCommunityIcons
@@ -233,47 +265,47 @@ const CartScreen = ({ navigation }: any) => {
                             size={16}
                           />
                           <Text> </Text>
-                          Rp.{" "}
+                          Rp.{' '}
                           {itemData.item.productTotal
                             .toString()
-                            .replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                            .replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                         </Text>
                         <Text></Text>
-                        <View style={{ flexDirection: "row" }}>
+                        <View style={{ flexDirection: 'row' }}>
                           <TouchableOpacity
                             style={{
                               padding: 1,
                               borderWidth: 1,
-                              borderColor: "#cccccc",
+                              borderColor: '#cccccc',
                               borderRadius: 10,
-                              width: "15%",
-                              alignItems: "center",
+                              width: '15%',
+                              alignItems: 'center',
                             }}
                             onPress={() => minusButtonHandler(itemData.item)}
                           >
-                            <Text style={{ color: "green" }}>-</Text>
+                            <Text style={{ color: 'green' }}>-</Text>
                           </TouchableOpacity>
                           <Text> {itemData.item.quantity} </Text>
                           <TouchableOpacity
                             style={{
                               padding: 1,
-                              backgroundColor: "green",
+                              backgroundColor: 'green',
                               borderRadius: 10,
-                              width: "15%",
-                              alignItems: "center",
+                              width: '15%',
+                              alignItems: 'center',
                             }}
                             onPress={() => plusButtonHandler(itemData.item)}
                           >
-                            <Text style={{ color: "white" }}>+</Text>
+                            <Text style={{ color: 'white' }}>+</Text>
                           </TouchableOpacity>
                         </View>
                       </View>
                     </View>
                   </Pressable>
-                );
+                )
               }}
               keyExtractor={(item, index) => {
-                return item.name + index;
+                return item.name + index
               }}
             ></FlatList>
           </View>
@@ -282,110 +314,110 @@ const CartScreen = ({ navigation }: any) => {
               style={styles.checkoutButton}
               onPress={checkoutHandler}
             >
-              <Text style={{ color: "white", fontWeight: "500" }}>
-                Checkout! ( Rp.{" "}
-                {totalPayment?.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}{" "}
+              <Text style={{ color: 'white', fontWeight: '500' }}>
+                Checkout! ( Rp.{' '}
+                {totalPayment?.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')}{' '}
                 )
               </Text>
             </TouchableOpacity>
           </View>
         </>
       ) : (
-        <View style={{ alignItems: "center", marginTop: "70%" }}>
+        <View style={{ alignItems: 'center', marginTop: '70%' }}>
           <Image
             style={{ width: 100, height: 100 }}
-            source={require("../assets/toko.png")}
+            source={require('../assets/toko.png')}
           />
           <Text
             style={{
-              color: "green",
+              color: 'green',
               fontSize: 15,
-              fontWeight: "300",
+              fontWeight: '300',
             }}
           >
-            Keranjang Anda Kosong
+            Keranjang Anda Kosong + {cart.test}
           </Text>
         </View>
       )}
     </View>
-  );
-};
+  )
+}
 
-export default CartScreen;
+export default CartScreen
 
 export const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
     paddingHorizontal: 15,
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
   },
-  paymentDropdownContainer: { width: "75%" },
-  paymentDropdown: { borderColor: "#B7B7B7", height: 1 },
-  paymentDropdownPlaceholder: { color: "grey" },
-  paymentDropdownPickerContainer: { borderColor: "#B7B7B7", color: "grey" },
+  paymentDropdownContainer: { width: '75%' },
+  paymentDropdown: { borderColor: '#B7B7B7', height: 1 },
+  paymentDropdownPlaceholder: { color: 'grey' },
+  paymentDropdownPickerContainer: { borderColor: '#B7B7B7', color: 'grey' },
   adminContainer: {
     flex: 3,
-    flexDirection: "column",
-    borderBottomColor: "#cccccc",
+    flexDirection: 'column',
+    borderBottomColor: '#cccccc',
     borderBottomWidth: 1,
     paddingTop: 30,
     paddingHorizontal: 30,
   },
   adminTitle: {
-    color: "green",
-    fontWeight: "600",
+    color: 'green',
+    fontWeight: '600',
     fontSize: 22,
   },
   adminAddress: {
-    color: "gray",
+    color: 'gray',
     fontSize: 15,
   },
   adminDescription: {
-    color: "grey",
+    color: 'grey',
   },
   productContainer: {
     flex: 5,
-    flexDirection: "row",
-    justifyContent: "center",
+    flexDirection: 'row',
+    justifyContent: 'center',
     // alignItems: "center",
     marginVertical: 10,
   },
   productItem: {
     flex: 2,
-    flexDirection: "row",
+    flexDirection: 'row',
     borderWidth: 1,
-    borderColor: "#cccccc",
+    borderColor: '#cccccc',
     borderRadius: 10,
     // padding: 10,
     marginBottom: 20,
     height: 120,
   },
-  productItemImageContainer: { width: "30%" },
+  productItemImageContainer: { width: '30%' },
   productItemImage: {
-    width: "100%",
-    height: "100%",
+    width: '100%',
+    height: '100%',
     borderBottomLeftRadius: 9,
     borderTopLeftRadius: 9,
   },
-  productItemContentContainer: { width: "70%", padding: 10 },
+  productItemContentContainer: { width: '70%', padding: 10 },
 
-  productContentTitle: { color: "green", fontWeight: "600", fontSize: 17 },
-  productContentToko: { color: "grey", fontWeight: "400", fontSize: 14 },
+  productContentTitle: { color: 'green', fontWeight: '600', fontSize: 17 },
+  productContentToko: { color: 'grey', fontWeight: '400', fontSize: 14 },
   productContentPrice: {},
-  productContentDescription: { color: "grey", fontWeight: "400", fontSize: 12 },
+  productContentDescription: { color: 'grey', fontWeight: '400', fontSize: 12 },
 
   checkoutContainer: {
     flex: 1,
-    flexDirection: "row",
+    flexDirection: 'row',
     marginTop: 10,
     marginBottom: 10,
   },
   checkoutButton: {
     marginVertical: 10,
-    alignItems: "center",
-    backgroundColor: "green",
-    width: "100%",
+    alignItems: 'center',
+    backgroundColor: 'green',
+    width: '100%',
     borderRadius: 10,
     padding: 10,
   },
-});
+})

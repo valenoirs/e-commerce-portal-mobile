@@ -1,24 +1,27 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import axios from "axios";
-import { useEffect, useState } from "react";
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import axios from 'axios'
+import { useEffect, useState, useContext } from 'react'
 import {
   StyleSheet,
   View,
   Text,
   TextInput,
   TouchableOpacity,
-} from "react-native";
-import { globalStyle } from "../styles/style";
+} from 'react-native'
+import { globalStyle } from '../styles/style'
 
-import config from "../config/config";
+import config from '../config/config'
+import UserContext from '../context/UserContext'
 
 const LoginScreen = ({ navigation }: any) => {
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
+  const [email, setEmail] = useState<string>('')
+  const [password, setPassword] = useState<string>('')
+
+  const { user, setUser } = useContext(UserContext)
 
   const handleLogin = (event: any) => {
     if (!email || !password) {
-      return alert("Harap mengisi semua form yang disediakan.");
+      return alert('Harap mengisi semua form yang disediakan.')
     }
 
     axios
@@ -28,21 +31,22 @@ const LoginScreen = ({ navigation }: any) => {
       })
       .then((response) => {
         try {
-          const data = JSON.stringify(response.data.user);
-          AsyncStorage.setItem("user", data);
+          // const data = JSON.stringify(response.data.user);
+          setUser(response.data.user)
+          AsyncStorage.setItem('user', JSON.stringify(response.data.user))
         } catch (error) {
-          return;
+          return
         }
-        navigation.navigate("LoggedInTab");
+        navigation.reset({ index: 0, routes: [{ name: 'LoggedInTab' }] })
       })
       .catch((error) => {
-        alert(error.response.data.message);
-      });
-  };
+        alert(error.response.data.message)
+      })
+  }
 
   return (
     <View style={styles.mainContainer}>
-      <Text style={{ color: "green", fontSize: 30, fontWeight: "400" }}>
+      <Text style={{ color: 'green', fontSize: 30, fontWeight: '400' }}>
         Masuk
       </Text>
       <TextInput
@@ -59,39 +63,39 @@ const LoginScreen = ({ navigation }: any) => {
         value={password}
       />
       <TouchableOpacity style={globalStyle.button} onPress={handleLogin}>
-        <Text style={{ color: "#FFFFFF" }}>Masuk</Text>
+        <Text style={{ color: '#FFFFFF' }}>Masuk</Text>
       </TouchableOpacity>
       <Text>
-        Belum punya akun?{" "}
+        Belum punya akun?{' '}
         <Text
-          style={{ color: "green" }}
-          onPress={() => navigation.navigate("Register")}
+          style={{ color: 'green' }}
+          onPress={() => navigation.navigate('Register')}
         >
           Daftar
-        </Text>{" "}
+        </Text>{' '}
         sekarang.
       </Text>
     </View>
-  );
-};
+  )
+}
 
-export default LoginScreen;
+export default LoginScreen
 
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#fff",
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
   },
   textInput: {
     // borderWidth: 1,
     marginVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: "#cccccc",
+    borderBottomColor: '#cccccc',
     borderRadius: 3,
-    width: "70%",
+    width: '70%',
     marginRight: 8,
     padding: 8,
   },
-});
+})

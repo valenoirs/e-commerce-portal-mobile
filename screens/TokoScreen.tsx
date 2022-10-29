@@ -1,5 +1,5 @@
-import axios from "axios";
-import { useEffect, useState } from "react";
+import axios from 'axios'
+import { useContext, useEffect, useState } from 'react'
 import {
   StyleSheet,
   View,
@@ -12,65 +12,78 @@ import {
   Pressable,
   Alert,
   Linking,
-} from "react-native";
-import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+} from 'react-native'
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
 
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
-import config from "../config/config";
+import config from '../config/config'
 
-import { styles as productStyles } from "./ProductScreen";
+import { styles as productStyles } from './ProductScreen'
+import CartContext from '../context/CartContext'
+import AdminContext from '../context/AdminContext'
 
 const TokoScreen = ({ navigation }: any) => {
-  const [tokoList, setTokoList] = useState<any>();
-  const [modalTokoVisible, setModalTokoVisible] = useState<boolean>(false);
-  const [modalTokoContent, setModalTokoContent] = useState<any>();
-  const [modalProductVisible, setModalProductVisible] =
-    useState<boolean>(false);
-  const [modalProductList, setModalProductList] = useState<any>();
-  const [modalProductContent, setModalProductContent] = useState<any>();
-  const [modalAdminContent, setModalAdminContent] = useState<any>();
-  const [reminder, setReminder] = useState<string>("");
-  const [currentCart, setCurrentCart] = useState<Array<any>>([]);
-  const [resetCart, setResetCart] = useState<number>(0);
+  const [tokoList, setTokoList] = useState<any>()
+  const [modalTokoVisible, setModalTokoVisible] = useState<boolean>(false)
+  const [modalTokoContent, setModalTokoContent] = useState<any>()
+  const [modalProductVisible, setModalProductVisible] = useState<boolean>(false)
+  const [modalProductList, setModalProductList] = useState<any>()
+  const [modalProductContent, setModalProductContent] = useState<any>()
+  const [modalAdminContent, setModalAdminContent] = useState<any>()
+  const [reminder, setReminder] = useState<string>('')
+  const [currentCart, setCurrentCart] = useState<Array<any>>([])
+  const [resetCart, setResetCart] = useState<number>(0)
+  const [searchInput, setSearchInput] = useState<string>('')
+
+  const { cart, setCart } = useContext(CartContext)
+  const { admin, setAdmin } = useContext(AdminContext)
 
   useEffect(() => {
     axios.get(`${config.api_host}/admin`).then((response) => {
-      setTokoList(response.data.data.admin);
-    });
-    console.log("TOKO USE EFFECT");
-  }, []);
+      setTokoList(response.data.data.admin)
+    })
+    console.log('TOKO USE EFFECT')
+  }, [])
+
+  const tokoSearchHandler = async () => {
+    axios
+      .get(`${config.api_host}/admin?search=${searchInput}`)
+      .then((response) => {
+        setTokoList(response.data.data.admin)
+      })
+  }
 
   const tokoOnPressHandler = async (content: any) => {
-    setReminder("");
-    setResetCart(0);
-    let admin: any;
+    setReminder('')
+    setResetCart(0)
+    // let admin: any
 
-    await AsyncStorage.getItem("cart").then((value: any) => {
-      setCurrentCart(JSON.parse(value));
-    });
+    // await AsyncStorage.getItem('cart').then((value: any) => {
+    //   setCurrentCart(JSON.parse(value))
+    // })
 
     await axios
       .get(`${config.api_host}/product?adminId=${content._id}`)
       .then((response) => {
-        setModalProductList(response.data.data.product);
-      });
+        setModalProductList(response.data.data.product)
+      })
 
-    await AsyncStorage.getItem("admin").then((value: any) => {
-      admin = JSON.parse(value);
-    });
+    // await AsyncStorage.getItem('admin').then((value: any) => {
+    //   admin = JSON.parse(value)
+    // })
 
     if (admin.adminId !== content._id) {
-      console.log("RESET");
+      console.log('RESET')
       setReminder(
-        "*Anda mengunjungi toko yang berbeda, menambahkan product akan menghapus produk lain di dalam keranjang."
-      );
-      setResetCart(1);
+        '*Anda mengunjungi toko yang berbeda, menambahkan product akan menghapus produk lain di dalam keranjang.'
+      )
+      setResetCart(1)
     }
 
-    setModalTokoContent(content);
-    setModalTokoVisible(!modalTokoVisible);
-  };
+    setModalTokoContent(content)
+    setModalTokoVisible(!modalTokoVisible)
+  }
 
   const productOnPressHandler = async (content: any) => {
     setModalProductContent({
@@ -81,7 +94,7 @@ const TokoScreen = ({ navigation }: any) => {
       quantity: 1,
       picture: content.picture,
       productTotal: content.price,
-    });
+    })
     setModalAdminContent({
       adminId: content.adminId,
       adminName: content.admin,
@@ -89,60 +102,72 @@ const TokoScreen = ({ navigation }: any) => {
       rating: modalTokoContent.rating,
       phone: modalTokoContent.phone,
       description: modalTokoContent.description,
-    });
-    setModalProductVisible(!modalProductVisible);
-  };
+    })
+    setModalProductVisible(!modalProductVisible)
+  }
 
   const addToCartHandler = async (content: any) => {
-    setReminder("");
-    let initialCart = currentCart;
-    const initialProduct = modalProductContent;
+    setReminder('')
+    let initialCart = cart
+    const initialProduct = modalProductContent
 
-    await AsyncStorage.setItem("admin", JSON.stringify(modalAdminContent));
+    // await AsyncStorage.setItem('admin', JSON.stringify(modalAdminContent))
+
+    setAdmin(modalAdminContent)
 
     // let same = cart.some((product) =>
     //   product.productId.includes(modalProductContent.productId)
     // );
 
-    let same = currentCart.find(
+    let same = cart.find(
       (product: any) => product.productId === modalProductContent.productId
-    );
+    )
 
     if (same) {
-      console.log("FOUND ITEM");
+      console.log('FOUND ITEM')
 
-      initialProduct.quantity += 1;
-      initialProduct.productTotal += modalProductContent.price;
+      // const quantity = (initialProduct.quantity += 1)
+      // const productTotal = (initialProduct.productTotal +=
+      //   modalProductContent.price)
 
-      const newCart = await initialCart.filter(
-        (cart) => cart.productId !== initialProduct.productId
-      );
+      // const newCart = await initialCart.filter(
+      //   (item: any) => item.productId !== initialProduct.productId
+      // )
 
-      newCart.push(initialProduct);
+      const newCart = initialCart.map((item: any) =>
+        item.productId === modalProductContent.productId
+          ? {
+              ...item,
+              quantity: item.quantity + 1,
+              productTotal: item.productTotal + item.price,
+            }
+          : item
+      )
 
-      setCurrentCart(newCart);
-      console.log(currentCart);
-    } else if (resetCart && currentCart.length !== 0) {
-      console.log("RESET");
-      setCurrentCart([initialProduct]);
-
-      console.log(currentCart);
+      // newCart.push(initialProduct)
+      setCart(newCart)
+      // setCurrentCart(newCart)
+    } else if (resetCart && cart.length !== 0) {
+      console.log('RESET')
+      setCart([initialProduct])
+      // setCurrentCart([initialProduct])
 
       return await AsyncStorage.setItem(
-        "cart",
+        'cart',
         JSON.stringify([initialProduct])
-      );
+      )
     } else {
-      console.log("NEW ITEM");
-      initialCart.push(initialProduct);
-      setCurrentCart(initialCart);
-      console.log(currentCart);
+      console.log('NEW ITEM')
+      // initialCart.push(initialProduct)
+      setCart((oldCart: any) => [...oldCart, initialProduct])
+      // setCurrentCart(initialCart)
     }
 
-    setResetCart(0);
+    setResetCart(0)
 
-    await AsyncStorage.setItem("cart", JSON.stringify(currentCart));
-  };
+    // setCart(currentCart)
+    // await AsyncStorage.setItem('cart', JSON.stringify(currentCart))
+  }
 
   return (
     <View style={styles.mainContainer}>
@@ -151,7 +176,7 @@ const TokoScreen = ({ navigation }: any) => {
         transparent={true}
         visible={modalProductVisible}
         onRequestClose={() => {
-          setModalProductVisible(!modalProductVisible);
+          setModalProductVisible(!modalProductVisible)
         }}
       >
         <View style={productStyles.modalContainer}>
@@ -173,29 +198,29 @@ const TokoScreen = ({ navigation }: any) => {
                   {modalProductContent.name}
                 </Text>
                 <Text>
-                  Rp.{" "}
+                  Rp.{' '}
                   {modalProductContent.price
                     .toString()
-                    .replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                    .replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                 </Text>
                 <Text> </Text>
                 {modalTokoContent.isOpen ? (
                   modalProductContent.available ? (
                     <TouchableOpacity
-                      style={productStyles.modalButton}
+                      style={styles.modalButton}
                       onPress={() => addToCartHandler(modalProductContent)}
                     >
-                      <Text style={{ color: "white" }}>
+                      <Text style={{ color: 'white' }}>
                         Tambah ke Keranjang
                       </Text>
                     </TouchableOpacity>
                   ) : (
-                    <Text style={{ color: "red", fontSize: 11 }}>
+                    <Text style={{ color: 'red', fontSize: 11 }}>
                       Maaf Produk Habis
                     </Text>
                   )
                 ) : (
-                  <Text style={{ color: "red", fontSize: 11 }}>
+                  <Text style={{ color: 'red', fontSize: 11 }}>
                     Maaf Toko Sedang Tutup
                   </Text>
                 )}
@@ -211,7 +236,7 @@ const TokoScreen = ({ navigation }: any) => {
         transparent={true}
         visible={modalTokoVisible}
         onRequestClose={() => {
-          setModalTokoVisible(!modalTokoVisible);
+          setModalTokoVisible(!modalTokoVisible)
         }}
       >
         <View style={styles.modalContainer}>
@@ -222,9 +247,9 @@ const TokoScreen = ({ navigation }: any) => {
                   style={styles.modalTokoTitle}
                   onPress={() => {
                     Linking.openURL(
-                      "whatsapp://send?phone=62" +
+                      'whatsapp://send?phone=62' +
                         modalTokoContent.phone.slice(1)
-                    );
+                    )
                   }}
                 >
                   <MaterialCommunityIcons name="store" size={22} />
@@ -241,7 +266,7 @@ const TokoScreen = ({ navigation }: any) => {
                   <MaterialCommunityIcons
                     name="star"
                     size={15}
-                    style={{ color: "gold" }}
+                    style={{ color: 'gold' }}
                   />
                   <Text> </Text>
                   {modalTokoContent.rating}
@@ -252,13 +277,13 @@ const TokoScreen = ({ navigation }: any) => {
                 <Text> </Text>
                 <Text>
                   {modalTokoContent.isOpen ? (
-                    <Text style={{ color: "green" }}>
+                    <Text style={{ color: 'green' }}>
                       <MaterialCommunityIcons name="door-open" size={15} />
                       <Text> </Text>
                       Buka
                     </Text>
                   ) : (
-                    <Text style={{ color: "red" }}>
+                    <Text style={{ color: 'red' }}>
                       <MaterialCommunityIcons name="door-sliding" size={15} />
                       <Text> </Text>
                       Tutup
@@ -268,7 +293,7 @@ const TokoScreen = ({ navigation }: any) => {
               </View>
               <View style={styles.modalProductListContainer}>
                 <Text
-                  style={{ color: "green", marginBottom: 10, fontSize: 11 }}
+                  style={{ color: 'green', marginBottom: 10, fontSize: 11 }}
                 >
                   {reminder}
                 </Text>
@@ -298,10 +323,10 @@ const TokoScreen = ({ navigation }: any) => {
                                 <Text> </Text>
                                 {itemData.item.name}
                                 {itemData.item.available ? (
-                                  ""
+                                  ''
                                 ) : (
-                                  <Text style={{ color: "red", fontSize: 10 }}>
-                                    {" "}
+                                  <Text style={{ color: 'red', fontSize: 10 }}>
+                                    {' '}
                                     Habis
                                   </Text>
                                 )}
@@ -317,10 +342,10 @@ const TokoScreen = ({ navigation }: any) => {
                               <Text style={styles.productContentPrice}>
                                 <MaterialCommunityIcons name="cash" size={16} />
                                 <Text> </Text>
-                                Rp.{" "}
+                                Rp.{' '}
                                 {itemData.item.price
                                   .toString()
-                                  .replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                                  .replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                               </Text>
                               <Text style={styles.productContentDescription}>
                                 {itemData.item.description}
@@ -328,23 +353,23 @@ const TokoScreen = ({ navigation }: any) => {
                             </View>
                           </View>
                         </Pressable>
-                      );
+                      )
                     }}
                     keyExtractor={(item, index) => {
-                      return item._id;
+                      return item._id
                     }}
                   ></FlatList>
                 ) : (
-                  <View style={{ alignItems: "center", marginTop: "50%" }}>
+                  <View style={{ alignItems: 'center', marginTop: '50%' }}>
                     <Image
                       style={{ width: 100, height: 100 }}
-                      source={require("../assets/toko.png")}
+                      source={require('../assets/toko.png')}
                     />
                     <Text
                       style={{
-                        color: "green",
+                        color: 'green',
                         fontSize: 15,
-                        fontWeight: "300",
+                        fontWeight: '300',
                       }}
                     >
                       Toko Belum Memiliki Product
@@ -354,16 +379,16 @@ const TokoScreen = ({ navigation }: any) => {
               </View>
             </View>
           ) : (
-            <View style={{ alignItems: "center", marginTop: "50%" }}>
+            <View style={{ alignItems: 'center', marginTop: '50%' }}>
               <Image
                 style={{ width: 100, height: 100 }}
-                source={require("../assets/toko.png")}
+                source={require('../assets/toko.png')}
               />
               <Text
                 style={{
-                  color: "green",
+                  color: 'green',
                   fontSize: 15,
-                  fontWeight: "300",
+                  fontWeight: '300',
                 }}
               >
                 Memuat
@@ -373,12 +398,18 @@ const TokoScreen = ({ navigation }: any) => {
         </View>
       </Modal>
       <View style={styles.searchContainer}>
-        <TextInput style={styles.searchTextInput} placeholder="Cari" />
+        <TextInput
+          style={styles.searchTextInput}
+          placeholder="Cari"
+          onChangeText={(text) => setSearchInput(text)}
+          value={searchInput}
+        />
         <MaterialCommunityIcons
           style={styles.searchButton}
           name="clipboard-search-outline"
           size={24}
           color="green"
+          onPress={tokoSearchHandler}
         />
       </View>
       <View style={styles.tokoContainer}>
@@ -389,14 +420,14 @@ const TokoScreen = ({ navigation }: any) => {
               return (
                 <Pressable
                   onPress={() => {
-                    tokoOnPressHandler(itemData.item);
+                    tokoOnPressHandler(itemData.item)
                   }}
                 >
                   <View style={styles.tokoItem}>
                     <View style={styles.tokoItemImageContainer}>
                       <Image
                         style={styles.tokoItemImage}
-                        source={require("../assets/toko.png")}
+                        source={require('../assets/toko.png')}
                       />
                     </View>
                     <View style={styles.tokoItemContentContainer}>
@@ -414,7 +445,7 @@ const TokoScreen = ({ navigation }: any) => {
                         <MaterialCommunityIcons
                           name="star"
                           size={15}
-                          style={{ color: "gold" }}
+                          style={{ color: 'gold' }}
                         />
                         <Text> </Text>
                         {itemData.item.rating}
@@ -422,7 +453,7 @@ const TokoScreen = ({ navigation }: any) => {
                       <Text></Text>
                       <Text style={styles.tokoContentOpen}>
                         {itemData.item.isOpen ? (
-                          <Text style={{ color: "green" }}>
+                          <Text style={{ color: 'green' }}>
                             <MaterialCommunityIcons
                               name="door-open"
                               size={14}
@@ -431,7 +462,7 @@ const TokoScreen = ({ navigation }: any) => {
                             Buka
                           </Text>
                         ) : (
-                          <Text style={{ color: "red" }}>
+                          <Text style={{ color: 'red' }}>
                             <MaterialCommunityIcons
                               name="door-sliding"
                               size={14}
@@ -444,23 +475,23 @@ const TokoScreen = ({ navigation }: any) => {
                     </View>
                   </View>
                 </Pressable>
-              );
+              )
             }}
             keyExtractor={(item, index) => {
-              return item._id;
+              return item._id
             }}
           ></FlatList>
         ) : (
-          <View style={{ alignItems: "center", marginTop: "50%" }}>
+          <View style={{ alignItems: 'center', marginTop: '50%' }}>
             <Image
               style={{ width: 100, height: 100 }}
-              source={require("../assets/toko.png")}
+              source={require('../assets/toko.png')}
             />
             <Text
               style={{
-                color: "green",
+                color: 'green',
                 fontSize: 15,
-                fontWeight: "300",
+                fontWeight: '300',
               }}
             >
               Memuat Toko
@@ -469,48 +500,55 @@ const TokoScreen = ({ navigation }: any) => {
         )}
       </View>
     </View>
-  );
-};
+  )
+}
 
-export default TokoScreen;
+export default TokoScreen
 
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
     paddingHorizontal: 15,
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
   },
   modalContainer: {
     flex: 1,
-    flexDirection: "column-reverse",
-    alignItems: "center",
+    flexDirection: 'column-reverse',
+    alignItems: 'center',
+  },
+  modalButton: {
+    backgroundColor: 'green',
+    width: 180,
+    padding: 10,
+    alignItems: 'center',
+    borderRadius: 10,
   },
   modalTokoContent: {
     paddingVertical: 30,
     // padding: 30,
-    flexDirection: "column",
+    flexDirection: 'column',
     // alignItems: "center",
-    width: "100%",
-    height: "90%",
-    backgroundColor: "white",
+    width: '100%',
+    height: '90%',
+    backgroundColor: 'white',
   },
   modalTokoContainer: {
-    borderBottomColor: "#cccccc",
+    borderBottomColor: '#cccccc',
     borderBottomWidth: 1,
     paddingHorizontal: 30,
     paddingBottom: 15,
   },
   modalTokoTitle: {
-    color: "green",
-    fontWeight: "600",
+    color: 'green',
+    fontWeight: '600',
     fontSize: 22,
   },
   modalTokoAddress: {
-    color: "gray",
+    color: 'gray',
     fontSize: 15,
   },
   modalTokoDescription: {
-    color: "grey",
+    color: 'grey',
   },
   modalProductListContainer: {
     paddingTop: 15,
@@ -518,81 +556,81 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     flex: 1,
-    flexDirection: "row",
+    flexDirection: 'row',
     marginTop: 10,
     marginBottom: 10,
   },
   searchTextInput: {
     borderBottomWidth: 1,
-    borderColor: "#cccccc",
-    width: "90%",
-    height: "75%",
+    borderColor: '#cccccc',
+    width: '90%',
+    height: '75%',
   },
   searchButton: {
     paddingTop: 10,
     borderBottomWidth: 1,
-    borderColor: "#cccccc",
-    width: "10%",
-    height: "75%",
+    borderColor: '#cccccc',
+    width: '10%',
+    height: '75%',
   },
   tokoContainer: {
     flex: 9,
-    flexDirection: "row",
-    justifyContent: "center",
+    flexDirection: 'row',
+    justifyContent: 'center',
     // alignItems: "center",
   },
   tokoItem: {
     flex: 1,
-    flexDirection: "row",
+    flexDirection: 'row',
     borderWidth: 1,
-    borderColor: "#cccccc",
+    borderColor: '#cccccc',
     borderRadius: 10,
     // padding: 10,
     marginBottom: 20,
     height: 120,
   },
   tokoItemImageContainer: {
-    width: "30%",
-    alignItems: "center",
-    justifyContent: "center",
+    width: '30%',
+    alignItems: 'center',
+    justifyContent: 'center',
     borderRightWidth: 1,
-    borderColor: "#cccccc",
+    borderColor: '#cccccc',
   },
-  tokoItemImage: { width: "80%", height: "80%" },
-  tokoItemContentContainer: { width: "70%", padding: 10 },
+  tokoItemImage: { width: '80%', height: '80%' },
+  tokoItemContentContainer: { width: '70%', padding: 10 },
 
-  tokoContentTitle: { color: "green", fontWeight: "600", fontSize: 17 },
-  tokoContentToko: { color: "grey", fontWeight: "400", fontSize: 14 },
+  tokoContentTitle: { color: 'green', fontWeight: '600', fontSize: 17 },
+  tokoContentToko: { color: 'grey', fontWeight: '400', fontSize: 14 },
   tokoContentOpen: { fontSize: 13 },
-  tokoContentRating: { fontWeight: "400", fontSize: 12 },
+  tokoContentRating: { fontWeight: '400', fontSize: 12 },
 
   productContainer: {
     flex: 9,
-    flexDirection: "row",
-    justifyContent: "center",
+    flexDirection: 'row',
+    justifyContent: 'center',
     // alignItems: "center",
   },
   productItem: {
     flex: 1,
-    flexDirection: "row",
+    flexDirection: 'row',
     borderWidth: 1,
-    borderColor: "#cccccc",
+    borderColor: '#cccccc',
     borderRadius: 10,
     // padding: 10,
     marginBottom: 20,
     height: 120,
   },
-  productItemImageContainer: { width: "30%" },
+  productItemImageContainer: { width: '30%' },
   productItemImage: {
-    width: "100%",
-    height: "100%",
+    width: '100%',
+    height: '100%',
     borderBottomLeftRadius: 9,
     borderTopLeftRadius: 9,
   },
-  productItemContentContainer: { width: "70%", padding: 10 },
+  productItemContentContainer: { width: '70%', padding: 10 },
 
-  productContentTitle: { color: "green", fontWeight: "600", fontSize: 17 },
-  productContentToko: { color: "grey", fontWeight: "400", fontSize: 14 },
+  productContentTitle: { color: 'green', fontWeight: '600', fontSize: 17 },
+  productContentToko: { color: 'grey', fontWeight: '400', fontSize: 14 },
   productContentPrice: {},
-  productContentDescription: { color: "grey", fontWeight: "400", fontSize: 12 },
-});
+  productContentDescription: { color: 'grey', fontWeight: '400', fontSize: 12 },
+})

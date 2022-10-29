@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from 'react'
 import {
   StyleSheet,
   View,
@@ -9,70 +9,60 @@ import {
   Modal,
   TouchableOpacity,
   Pressable,
-} from "react-native";
-import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+} from 'react-native'
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
 
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import axios from "axios";
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import axios from 'axios'
 
-import config from "../config/config";
+import config from '../config/config'
+import UserContext from '../context/UserContext'
 
 const ProductScreen = ({ navigation }: any) => {
-  const [productList, setProductList] = useState<any>();
-  const [modalVisible, setModalVisible] = useState<boolean>(false);
-  const [modalContent, setModalContent] = useState<any>();
+  const [productList, setProductList] = useState<any>()
+  const [modalVisible, setModalVisible] = useState<boolean>(false)
+  const [modalContent, setModalContent] = useState<any>()
+  const [searchInput, setSearchInput] = useState<string>('')
+
+  const { user, setUser } = useContext(UserContext)
 
   useEffect(() => {
-    AsyncStorage.getItem("user").then((value) => {
-      if (!value) {
-        return navigation.navigate("Login");
-      } else {
-        axios.get(`${config.api_host}/product`).then((response) => {
-          setProductList(response.data.data.product);
-        });
-      }
-    });
+    axios.get(`${config.api_host}/product`).then((response) => {
+      setProductList(response.data.data.product)
+    })
 
-    console.log("PRODUCT USE EFFECT");
+    AsyncStorage.getItem('user').then((value) => {
+      if (!value) {
+        return navigation.reset({ index: 0, routes: [{ name: 'Login' }] })
+      } else {
+        setUser(JSON.parse(value))
+      }
+    })
+
+    console.log('PRODUCT USE EFFECT')
     // AsyncStorage.getItem("cart").then((value) => {
     //   if (!value) {
     //     AsyncStorage.setItem("cart", JSON.stringify([]));
     //   }
     // });
-  }, []);
+  }, [])
+
+  const productSearchHandler = async () => {
+    axios
+      .get(`${config.api_host}/product?search=${searchInput}`)
+      .then((response) => {
+        setProductList(response.data.data.product)
+      })
+  }
 
   const productOnPressHandler = (content: any) => {
-    setModalContent(content);
-    setModalVisible(!modalVisible);
-  };
+    setModalContent(content)
+    setModalVisible(!modalVisible)
+  }
 
-  const addToCartHandler = async () => {
-    console.log("ADD TO CART");
-    console.log(modalContent);
-    let cart: any[] = [];
-
-    await AsyncStorage.getItem("cart").then((value: any) => {
-      console.log("ASYNC STORAGE");
-      console.log(value);
-      cart = JSON.parse(value);
-    });
-
-    if (
-      cart.some((obj) => {
-        obj._id === modalContent._id;
-      })
-    ) {
-      console.log("Found");
-    } else {
-      console.log("NEW ITEM");
-      // cart.push(modalContent);
-    }
-
-    // AsyncStorage.setItem("cart", JSON.stringify(cart));
-
-    console.log("FINAL CART");
-    console.log(cart);
-  };
+  const cariTokoHandler = async () => {
+    navigation.navigate('Toko')
+  }
 
   return (
     <View style={styles.mainContainer}>
@@ -82,7 +72,7 @@ const ProductScreen = ({ navigation }: any) => {
         transparent={true}
         visible={modalVisible}
         onRequestClose={() => {
-          setModalVisible(!modalVisible);
+          setModalVisible(!modalVisible)
         }}
       >
         <View style={styles.modalContainer}>
@@ -101,18 +91,21 @@ const ProductScreen = ({ navigation }: any) => {
                 <Text style={styles.modalInformationTitle}>
                   {modalContent.name}
                 </Text>
+                <Text style={styles.productContentToko}>
+                  {modalContent.admin}
+                </Text>
                 <Text>
-                  Rp.{" "}
+                  Rp.{' '}
                   {modalContent.price
                     .toString()
-                    .replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                    .replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                 </Text>
                 <Text> </Text>
                 <TouchableOpacity
                   style={styles.modalButton}
-                  onPress={addToCartHandler}
+                  onPress={cariTokoHandler}
                 >
-                  <Text style={{ color: "white" }}>Tambah ke Keranjang</Text>
+                  <Text style={{ color: 'white' }}>Cari Toko</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -123,12 +116,18 @@ const ProductScreen = ({ navigation }: any) => {
       </Modal>
       {/* Search */}
       <View style={styles.searchContainer}>
-        <TextInput style={styles.searchTextInput} placeholder="Cari" />
+        <TextInput
+          style={styles.searchTextInput}
+          placeholder="Cari"
+          onChangeText={(text) => setSearchInput(text)}
+          value={searchInput}
+        />
         <MaterialCommunityIcons
           style={styles.searchButton}
           name="clipboard-search-outline"
           size={24}
           color="green"
+          onPress={productSearchHandler}
         />
       </View>
       {/* Product List */}
@@ -157,10 +156,10 @@ const ProductScreen = ({ navigation }: any) => {
                         <Text> </Text>
                         {itemData.item.name}
                         {itemData.item.available ? (
-                          ""
+                          ''
                         ) : (
-                          <Text style={{ color: "red", fontSize: 10 }}>
-                            {" "}
+                          <Text style={{ color: 'red', fontSize: 10 }}>
+                            {' '}
                             Habis
                           </Text>
                         )}
@@ -173,10 +172,16 @@ const ProductScreen = ({ navigation }: any) => {
                       <Text style={styles.productContentPrice}>
                         <MaterialCommunityIcons name="cash" size={16} />
                         <Text> </Text>
-                        Rp.{" "}
-                        {itemData.item.price
-                          .toString()
-                          .replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                        Rp.{' '}
+                        {itemData.item.price ? (
+                          <>
+                            {itemData.item.price
+                              .toString()
+                              .replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                          </>
+                        ) : (
+                          <>{itemData.item.price}</>
+                        )}
                       </Text>
                       <Text style={styles.productContentDescription}>
                         {itemData.item.description}
@@ -184,23 +189,23 @@ const ProductScreen = ({ navigation }: any) => {
                     </View>
                   </View>
                 </Pressable>
-              );
+              )
             }}
             keyExtractor={(item, index) => {
-              return item._id;
+              return item._id
             }}
           ></FlatList>
         ) : (
-          <View style={{ alignItems: "center", marginTop: "50%" }}>
+          <View style={{ alignItems: 'center', marginTop: '50%' }}>
             <Image
               style={{ width: 100, height: 100 }}
-              source={require("../assets/toko.png")}
+              source={require('../assets/toko.png')}
             />
             <Text
               style={{
-                color: "green",
+                color: 'green',
                 fontSize: 15,
-                fontWeight: "300",
+                fontWeight: '300',
               }}
             >
               Memuat Product
@@ -209,98 +214,98 @@ const ProductScreen = ({ navigation }: any) => {
         )}
       </View>
     </View>
-  );
-};
+  )
+}
 
-export default ProductScreen;
+export default ProductScreen
 
 export const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
     paddingHorizontal: 15,
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
   },
   modalContainer: {
     flex: 1,
-    flexDirection: "column-reverse",
-    alignItems: "center",
+    flexDirection: 'column-reverse',
+    alignItems: 'center',
   },
   modalContent: {
     paddingVertical: 30,
     padding: 15,
-    flexDirection: "row",
+    flexDirection: 'row',
     borderTopWidth: 1,
-    borderColor: "#cccccc",
-    justifyContent: "center",
-    width: "100%",
+    borderColor: '#cccccc',
+    justifyContent: 'center',
+    width: '100%',
     height: 205,
-    backgroundColor: "white",
+    backgroundColor: 'white',
   },
-  modalImageContainer: { width: "30%", paddingBottom: 30 },
-  modalImage: { width: "100%", height: "100%", borderRadius: 20 },
+  modalImageContainer: { width: '30%', paddingBottom: 30 },
+  modalImage: { width: '100%', height: '100%', borderRadius: 20 },
   modalInformationContainer: {
-    width: "70%",
+    width: '70%',
     padding: 10,
-    alignItems: "center",
+    alignItems: 'center',
   },
   modalInformationTitle: {
-    color: "green",
-    fontWeight: "600",
+    color: 'green',
+    fontWeight: '600',
     fontSize: 17,
   },
   modalButton: {
-    backgroundColor: "green",
-    width: 175,
+    backgroundColor: 'green',
+    width: 125,
     padding: 10,
-    alignItems: "center",
+    alignItems: 'center',
     borderRadius: 10,
   },
   searchContainer: {
     flex: 1,
-    flexDirection: "row",
+    flexDirection: 'row',
     marginTop: 10,
     marginBottom: 10,
   },
   searchTextInput: {
     borderBottomWidth: 1,
-    borderColor: "#cccccc",
-    width: "90%",
-    height: "75%",
+    borderColor: '#cccccc',
+    width: '90%',
+    height: '75%',
   },
   searchButton: {
     paddingTop: 10,
     borderBottomWidth: 1,
-    borderColor: "#cccccc",
-    width: "10%",
-    height: "75%",
+    borderColor: '#cccccc',
+    width: '10%',
+    height: '75%',
   },
   productContainer: {
     flex: 9,
-    flexDirection: "row",
-    justifyContent: "center",
+    flexDirection: 'row',
+    justifyContent: 'center',
     // alignItems: "center",
   },
   productItem: {
     flex: 1,
-    flexDirection: "row",
+    flexDirection: 'row',
     borderWidth: 1,
-    borderColor: "#cccccc",
+    borderColor: '#cccccc',
     borderRadius: 10,
     // padding: 10,
     marginBottom: 20,
     height: 120,
   },
-  productItemImageContainer: { width: "30%" },
+  productItemImageContainer: { width: '30%' },
   productItemImage: {
-    width: "100%",
-    height: "100%",
+    width: '100%',
+    height: '100%',
     borderBottomLeftRadius: 9,
     borderTopLeftRadius: 9,
   },
-  productItemContentContainer: { width: "70%", padding: 10 },
+  productItemContentContainer: { width: '70%', padding: 10 },
 
-  productContentTitle: { color: "green", fontWeight: "600", fontSize: 17 },
-  productContentToko: { color: "grey", fontWeight: "400", fontSize: 14 },
+  productContentTitle: { color: 'green', fontWeight: '600', fontSize: 17 },
+  productContentToko: { color: 'grey', fontWeight: '400', fontSize: 14 },
   productContentPrice: {},
-  productContentDescription: { color: "grey", fontWeight: "400", fontSize: 12 },
-});
+  productContentDescription: { color: 'grey', fontWeight: '400', fontSize: 12 },
+})
