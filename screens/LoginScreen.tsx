@@ -7,6 +7,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  Image,
 } from 'react-native'
 import { globalStyle } from '../styles/style'
 
@@ -75,6 +76,10 @@ const LoginScreen = ({ navigation }: any) => {
         </Text>{' '}
         sekarang.
       </Text>
+      {/* <Image
+        source={require('../assets/toko.png')}
+        style={{ width: 100, height: 100, marginTop: 25 }}
+      /> */}
     </View>
   )
 }

@@ -99,7 +99,7 @@ const TokoScreen = ({ navigation }: any) => {
       adminId: content.adminId,
       adminName: content.admin,
       address: modalTokoContent.address,
-      rating: modalTokoContent.rating,
+      rated: modalTokoContent.rated,
       phone: modalTokoContent.phone,
       description: modalTokoContent.description,
     })
@@ -269,7 +269,7 @@ const TokoScreen = ({ navigation }: any) => {
                     style={{ color: 'gold' }}
                   />
                   <Text> </Text>
-                  {modalTokoContent.rating}
+                  {modalTokoContent.rated}
                 </Text>
                 <Text style={styles.modalTokoDescription}>
                   {modalTokoContent.description}
@@ -448,7 +448,7 @@ const TokoScreen = ({ navigation }: any) => {
                           style={{ color: 'gold' }}
                         />
                         <Text> </Text>
-                        {itemData.item.rating}
+                        {itemData.item.rated}
                       </Text>
                       <Text></Text>
                       <Text style={styles.tokoContentOpen}>

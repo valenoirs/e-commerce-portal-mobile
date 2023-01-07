@@ -198,7 +198,7 @@ const CartScreen = ({ navigation }: any) => {
                     style={{ color: 'gold' }}
                   />
                   <Text> </Text>
-                  {admin.rating}
+                  {admin.rated}
                 </Text>
                 <Text style={styles.adminDescription}>{admin.description}</Text>
                 <Text> </Text>

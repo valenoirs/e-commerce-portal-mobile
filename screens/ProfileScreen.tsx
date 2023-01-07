@@ -11,6 +11,7 @@ import {
   Image,
 } from 'react-native'
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
+import { AirbnbRating } from '@rneui/themed'
 
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import axios from 'axios'
@@ -71,6 +72,31 @@ const ProfileScreen = ({ navigation }: any) => {
         )
 
         setOrderList(newOrder)
+      })
+      .catch((error) => alert(error))
+  }
+
+  const ratingHandler = (rating: number) => {
+    axios
+      .patch(`${config.api_host}/api/order`, {
+        orderId: modalOrderContent._id,
+        adminId: modalOrderContent.adminId,
+        rating,
+      })
+      .then(async (response) => {
+        setModalOrderContent((modalOrderContent: any) => ({
+          ...modalOrderContent,
+          isRated: true,
+        }))
+
+        let newOrder = orderList.map((order: any) =>
+          order._id === modalOrderContent._id
+            ? { ...modalOrderContent, isRated: true }
+            : order
+        )
+
+        setOrderList(newOrder)
+        alert(response.data.message)
       })
       .catch((error) => alert(error))
   }
@@ -183,46 +209,57 @@ const ProfileScreen = ({ navigation }: any) => {
                     Total
                   </Text>
                 </View>
-                {modalOrderContent.product.map((item: any, index: any) => (
-                  <View
-                    key={item._id + index}
-                    style={styles.modalProductListItemList}
-                  >
-                    <Text
-                      style={{
-                        flex: 1,
-                        ...styles.modalProductListItemListText,
-                      }}
-                    >
-                      {item.name}
-                    </Text>
-                    <Text
-                      style={{
-                        flex: 1,
-                        ...styles.modalProductListItemListText,
-                      }}
-                    >
-                      x {item.quantity}
-                    </Text>
-                    <Text
-                      style={{
-                        flex: 1,
-                        ...styles.modalProductListItemListText,
-                      }}
-                    >
-                      Rp.{' '}
-                      {item.price
-                        .toString()
-                        .replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                    </Text>
-                    <Text style={styles.modalProductListItemListText}>
-                      Rp.{' '}
-                      {item.productTotal
-                        .toString()
-                        .replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                    </Text>
-                  </View>
-                ))}
+                <View>
+                  <FlatList
+                    data={modalOrderContent.product}
+                    renderItem={(itemData: any) => {
+                      const { index } = itemData
+                      return (
+                        <View
+                          key={itemData.item._id + index}
+                          style={styles.modalProductListItemList}
+                        >
+                          <Text
+                            style={{
+                              flex: 1,
+                              ...styles.modalProductListItemListText,
+                            }}
+                          >
+                            {itemData.item.name}
+                          </Text>
+                          <Text
+                            style={{
+                              flex: 1,
+                              ...styles.modalProductListItemListText,
+                            }}
+                          >
+                            x {itemData.item.quantity}
+                          </Text>
+                          <Text
+                            style={{
+                              flex: 1,
+                              ...styles.modalProductListItemListText,
+                            }}
+                          >
+                            Rp.{' '}
+                            {itemData.item.price
+                              .toString()
+                              .replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                          </Text>
+                          <Text style={styles.modalProductListItemListText}>
+                            Rp.{' '}
+                            {itemData.item.productTotal
+                              .toString()
+                              .replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                          </Text>
+                        </View>
+                      )
+                    }}
+                    keyExtractor={(item, index) => {
+                      return item._id + index
+                    }}
+                  ></FlatList>
+                </View>
                 <View
                   style={{
                     borderTopWidth: 1,
@@ -244,10 +281,29 @@ const ProfileScreen = ({ navigation }: any) => {
               {/* Modal Konfirmasi Terima Barang Container */}
               <View style={styles.confirmOrderContainer}>
                 {modalOrderContent.status === 'Pesanan Diterima' ? (
-                  <View style={styles.orderConfirmedButton}>
-                    <Text style={{ color: 'green', fontWeight: '500' }}>
-                      Pesanan Selesai
-                    </Text>
+                  <View style={{ flex: 1 }}>
+                    {!modalOrderContent.isRated ? (
+                      <View>
+                        <AirbnbRating
+                          size={20}
+                          showRating={false}
+                          onFinishRating={(rating) => {
+                            ratingHandler(rating)
+                          }}
+                        />
+                      </View>
+                    ) : (
+                      <View>
+                        <Text style={{ color: 'green', alignSelf: 'center' }}>
+                          Terima kasih sudah belanja
+                        </Text>
+                      </View>
+                    )}
+                    <View style={styles.orderConfirmedButton}>
+                      <Text style={{ color: 'green', fontWeight: '500' }}>
+                        Pesanan Selesai
+                      </Text>
+                    </View>
                   </View>
                 ) : (
                   <TouchableOpacity
@@ -452,17 +508,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalOrderContent: {
+    flex: 1,
     paddingVertical: 30,
     // padding: 30,
     flexDirection: 'column',
     // alignItems: "center",
     width: '100%',
-    height: '90%',
+    height: '100%',
     backgroundColor: 'white',
   },
 
   // Modal Admin Information
   modalTokoContainer: {
+    flex: 2.5,
     borderBottomColor: '#cccccc',
     borderBottomWidth: 1,
     paddingHorizontal: 30,
@@ -484,7 +542,7 @@ const styles = StyleSheet.create({
 
   // Modal Product List
   modalProductListContainer: {
-    flex: 1,
+    flex: 6,
     paddingTop: 15,
     paddingHorizontal: 30,
   },
@@ -515,6 +573,8 @@ const styles = StyleSheet.create({
 
   // Confirm Order Button
   confirmOrderContainer: {
+    flex: 1.5,
+    marginTop: 150,
     paddingHorizontal: 15,
   },
   confirmOrderButton: {
